@@ -1,7 +1,9 @@
-ASP -- A SEJITS Implementation for Python
--------
+Python implementation of the Par Lab health application, targeted at ASP for
+specialization and auto-tuning.
 
+This project depends on ASP (http://github.com/shoaibkamil/asp). Since we
+potentially may need to modify ASP for the health application, this project is
+actually a fork of ASP, although it contains files specific to the health
+application.
 
-See http://aspsejits.pbworks.com/
-
-
+ASP: http://aspsejits.pbworks.com/
