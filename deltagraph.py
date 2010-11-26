@@ -7,7 +7,7 @@ from stencil_grid import StencilGrid
 
 class DeltaGraph(object):
 
-    def __init__(self, lines, junctions):
+    def __init__(self, lines, junctions, boundary_size):
         # Lines are the arrays of nodes (e.g., arteries).
         self.lines = lines
         for line in self.lines:
@@ -34,15 +34,12 @@ class DeltaGraph(object):
                     error = '%s side of line %s in multiple junctions'
                     raise Exception(error % (side, line))
                 line_sides.add(line_side)
-            # As a temporary heuristic, find the maximum junction size to
-            # determine the boundary size.
-            junction_size = max(junction.size, junction_size)
 
         # Boundaries specify sides of lines that aren't in junctions.
         line_ids = DeltaGraph.indices(self.lines)
         all_line_sides = set(product(line_ids, (Side.LEFT, Side.RIGHT)))
         boundary_line_sides = all_line_sides - line_sides
-        self.boundaries = [Boundary(line_side, junction_size)
+        self.boundaries = [Boundary(line_side, boundary_size)
                            for line_side in boundary_line_sides]
 
         # Fill in the junctions and boundaries with the values in the lines.
@@ -127,10 +124,23 @@ class Line(StencilGrid):
 
     def __init__(self, size):
         # Ensure that 'size' is a single-element sequence since lines must be
-        # 1-D stencil grids.
-        if not isinstance(size, list) and not isinstance(size, tuple):
-            raise Exception('size %s must be a list or tuple' % (size,))
-        StencilGrid.__init__(self, size)
+        # 1-D stencil grids. Alternatively, it may be a scalar value.
+        if isinstance(size, list) or isinstance(size, tuple):
+            if len(size) != 1:
+                raise Exception('size %s must specify a 1-D stencil' % (size,))
+            self.size = size[0]
+        elif isinstance(size, int) or isinstance(size, float):
+            self.size = size
+        else:
+            raise Exception('invalid size %s' % (size,))
+        StencilGrid.__init__(self, [self.size])
+
+    def __str__(self):
+        values = ('.4f' % (self[ii],) for ii in range(self.size))
+        return '[%s]' % (', '.join(values))
+
+    def __repr__(self):
+        return 'Line(%s)' % (self.size,)
 
     @staticmethod
     def create_from_sequence(seq):
@@ -148,6 +158,9 @@ class Junction(object):
         for line_id in self.line_sides:
             self.line_values[line_id] = zeros(self.size)
 
+    def key(self):
+        return tuple(sorted(self.line_sides.items()))
+
     def __repr__(self):
         return 'Junction(%s, %s)' % (self.line_sides, self.size)
 
@@ -159,23 +172,11 @@ class Boundary(Junction):
         self.side = self.line_sides[self.line_id]
         self.values = self.line_values[self.line_id]
 
+    def key(self):
+        return (self.line_id, self.side)
+
     def set_values(self, values):
         self.values[:] = values 
 
     def __repr__(self):
         return 'Boundary(%s, %s)' % ((self.line_id, self.side), self.size)
-
-if __name__ == '__main__':
-    lines = [(1, 2, 3, 4, 5, 6, 7, 8, 9),
-             (11, 12, 13, 14, 15, 16, 17, 18, 19),
-             (21, 22, 23, 24, 25, 26, 27, 28, 29)]
-    lines = [Line.create_from_sequence(line) for line in lines]
-
-    line_sides = [(0, Side.RIGHT), (1, Side.LEFT), (2, Side.LEFT)]
-    junctions = [Junction(line_sides, 2)]
-    graph = DeltaGraph(lines, junctions)
-    print graph.boundaries
-    for junction in junctions:
-        print junction.line_values
-    for boundary in graph.boundaries:
-        print boundary.values
