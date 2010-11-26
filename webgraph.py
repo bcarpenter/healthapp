@@ -5,7 +5,7 @@ from numpy import zeros
 
 from stencil_grid import StencilGrid
 
-class DeltaGraph(object):
+class WebGraph(object):
 
     def __init__(self, lines, junctions, boundary_size):
         # Lines are the arrays of nodes (e.g., arteries).
@@ -36,7 +36,7 @@ class DeltaGraph(object):
                 line_sides.add(line_side)
 
         # Boundaries specify sides of lines that aren't in junctions.
-        line_ids = DeltaGraph.indices(self.lines)
+        line_ids = WebGraph.indices(self.lines)
         all_line_sides = set(product(line_ids, (Side.LEFT, Side.RIGHT)))
         boundary_line_sides = all_line_sides - line_sides
         self.boundaries = [Boundary(line_side, boundary_size)
@@ -95,7 +95,7 @@ class DeltaGraph(object):
             raise Exception('unknown side %s' % (side,))
 
     def __repr__(self):
-        return 'DeltaGraph(lines=%s, junctions=%s)' % \
+        return 'WebGraph(lines=%s, junctions=%s)' % \
             (self.lines, self.junctions)
 
     @staticmethod
