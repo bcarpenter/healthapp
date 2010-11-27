@@ -16,7 +16,7 @@ def create_interface_graph(node_graph, junction_size, boundary_size):
 
     junctions = []
     for junction in node_graph.junctions:
-        # We don't ncessarily use the same junction size as the original graph
+        # We don't necessarily use the same junction size as the original graph
         # since there is no constraint between junction sizes of different
         # graphs.
         junctions.append(Junction(junction.line_sides, junction_size))
