@@ -1,5 +1,6 @@
 import unittest
 from stencil_grid import *
+from stencil_struct import *
 
 class BasicTests(unittest.TestCase):
     def test_init(self):
@@ -53,7 +54,41 @@ class BasicTests(unittest.TestCase):
 
         grid = StencilGrid([5])
         self.assertEquals(len([x for x in grid.neighbors([1],1)]), 2)
-        
+
+    def test_struct_type_1D(self):
+        fields = ('a', 'b', 'c')
+        grid = StencilGrid([10], fields)
+        self.assertEquals(len(tuple(grid.neighbors([1], 1))), 2)
+
+    def test_struct_type_2D(self):
+        fields = ('a', 'b', 'c')
+        grid = StencilGrid([10, 10], fields)
+        self.assertEquals(len(tuple(grid.neighbors([1, 1], 1))), 4)
+
+    def test_struct_field_access_1D(self):
+        # This test should probably be split into smaller tests...
+        fields = ('a', 'b', 'c', 'd')
+        grid = StencilGrid([10], fields)
+
+        # Test writing to the stencil nodes in various ways.
+        counter = 1.0
+        for ii in range(grid.shape[0]):
+            grid[ii][0] = counter
+            grid[ii].b = counter + 1
+            struct_object = grid[ii]
+            struct_object[2] = counter + 2
+            struct_object.d = counter + 3
+            counter += 4
+
+        counter = 1.0
+        # Test reading from the stencil nodes in various ways.
+        for ii in range(grid.shape[0]):
+            struct_object = grid[ii]
+            self.assertEquals(struct_object.a, counter)
+            self.assertEquals(struct_object[1], counter + 1)
+            self.assertEquals(grid[ii].c, counter + 2)
+            self.assertEquals(grid[ii][3], counter + 3)
+            counter += 4
 
 if __name__ == '__main__':
     unittest.main()

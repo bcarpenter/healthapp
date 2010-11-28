@@ -4,24 +4,20 @@ import numpy
 
 class StencilGrid(object):
 
-    def __init__(self, size, data_type=float):
+    def __init__(self, size, fields=None):
         self.dim = len(size)
         self.shape = size
         self.ghost_depth = 1
 
         # Support structs of floats in addition to plain floats.
-        if data_type is float:
+        if fields is None:
             self.data = numpy.zeros(size)
             self.struct = None
         else:
-            try:
-                self.data = numpy.zeros(size + [len(data_type._fields)])
-            except AttributeError:
-                raise Exception('data type must be float or struct')
-
+            self.data = numpy.zeros(size + [len(fields)])
             # Define a proxy that wraps an array and has the same fields as the
             # programmer-specified struct.
-            self.struct = StencilStruct.struct_from_fields(data_type._fields)
+            self.struct = StencilStruct.struct_from_fields(fields)
 
         self.set_grid_variables()
         self.set_interior()
