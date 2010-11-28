@@ -1,6 +1,7 @@
 import numpy
 import inspect
 from stencil_grid import *
+from stencil_struct import *
 import asp.codegen.python_ast as ast
 import asp.codegen.cpp_ast as cpp_ast
 import asp.codegen.ast_tools as ast_tools
