@@ -110,8 +110,8 @@ class StencilConvertASTTests(unittest.TestCase):
 						      1)
 		converter = StencilKernel.StencilConvertAST(self.argdict)
 		# visit_StencilNeighborIter expects to have dim vars defined already
-		converter.gen_dim_var()
-		converter.gen_dim_var()
+		converter.gen_dim_var(0)
+		converter.gen_dim_var(1)
 		result = converter.visit(n)
 		self.assertTrue(re.search("array_macro", str(result)))
 
