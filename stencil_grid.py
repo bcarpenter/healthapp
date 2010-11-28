@@ -1,12 +1,21 @@
+from itertools import product
 import numpy
 
 class StencilGrid(object):
 
-    def __init__(self, size):
+    def __init__(self, size, data_type=float):
         self.dim = len(size)
-        self.data = numpy.zeros(size)
         self.shape = size
         self.ghost_depth = 1
+
+        # Support structs of floats in addition to plain floats.
+        if data_type is float:
+            self.data = numpy.zeros(size)
+        else:
+            try:
+                self.data = numpy.zeros(size + [len(data_type._fields)])
+            except AttributeError:
+                raise Exception('data type must be float or struct')
 
         self.set_grid_variables()
         self.set_interior()
@@ -52,10 +61,13 @@ class StencilGrid(object):
         in pure Python mode; in SEJITS mode, it should be executed only
         in the translated language/library.
         """
-        import itertools
-        all_dims = [range(self.ghost_depth,self.shape[x]-self.ghost_depth) for x in range(0,self.dim)]
-        for item in itertools.product(*all_dims):
-            yield list(item)
+        all_dims = []
+        for dimension in range(self.dim):
+            # When computing the number of interior points, we assumed that
+            # the ghost depth is symmetric on both sides.
+            start = (self.shape[dimension] - self.interior[dimension]) / 2
+            all_dims.append(range(start, self.shape[dimension] - start))
+        return (list(point) for point in product(*all_dims))
 
     def border_points(self):
         """
@@ -73,4 +85,4 @@ class StencilGrid(object):
         """
         # return tuples for each neighbor
         for neighbor in self.neighbor_definition[dist]:
-            yield tuple(map(lambda a,b: a+b, list(center), list(neighbor)))
+            yield tuple(c + n for c, n in zip(center, neighbor))
