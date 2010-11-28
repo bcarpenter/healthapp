@@ -143,12 +143,21 @@ class StencilKernel(object):
 			macro = "_%s_array_macro(%s)" % (arg, ",".join(map(str, point)))
 			return macro
 
-		def gen_dim_var(self):
-			import random
-			import string
-			var = "_" + ''.join(random.choice(string.letters) for i in xrange(8))
-			self.dim_vars.append(var)
-			return var
+		def gen_dim_var(self, dim):
+			"""
+			Deterministically generates free variable names for loops over the given
+			dimension of the stencil grid. This method generates names like '_i',
+			'_j', and so on, wrapping around to '_ia', '_ib', etc... if necessary.
+			"""
+			characters, offset, dim = [], ord('i') - 1, int(dim + 1)
+			while dim > 0:
+				quotient, remainder = divmod(dim, ord('z') - offset + 1)
+				characters.append(chr(offset + remainder))
+				dim = quotient
+				offset = ord('a') - 1
+			variable = '_' + ''.join(characters)
+			self.dim_vars.append(variable)
+			return variable
 
 		def gen_array_unpack(self):
 			str = "double* _my_%s = (double *) PyArray_DATA(%s);"
@@ -163,8 +172,8 @@ class StencilKernel(object):
 			array = self.argdict[node.grid]
 			dim = len(array.shape)
 			# if dim == 2:
-			# 	dim1_var = self.gen_dim_var()
-			# 	dim2_var = self.gen_dim_var()
+			# 	dim1_var = self.gen_dim_var(0)
+			# 	dim2_var = self.gen_dim_var(1)
 			# 	start1 = "int %s = %s" % (dim1_var, str(array.ghost_depth))
 			# 	condition1 = "%s < %s" % (dim1_var,  str(array.shape[0]-array.ghost_depth))
 			# 	update1 = "%s++" % dim1_var
@@ -175,7 +184,7 @@ class StencilKernel(object):
 			cur_node = None
 
 			for d in xrange(dim):
-				dim_var = self.gen_dim_var()
+				dim_var = self.gen_dim_var(d)
 				start = "int %s = %s" % (dim_var, str(array.ghost_depth))
 			 	condition = "%s < %s" % (dim_var,  str(array.shape[d]-array.ghost_depth))
 				update = "%s++" % dim_var
