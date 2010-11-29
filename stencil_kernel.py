@@ -166,7 +166,7 @@ class StencilKernel(object):
 			return cpp_ast.Statement(array_decl.format(type_name, grid_name))
 
 		def gen_struct_declaration(self, struct):
-			name = '_abc' # TODO: change this
+			name = '_' + str(hash(struct._fields))
 			fields = []
 			for field in struct._fields:
 				fields.append(cpp_ast.Value('double', field))
@@ -236,10 +236,11 @@ class StencilKernel(object):
 									   self.gen_array_macro(node.grid, self.dim_vars)))
 
 			replaced_body = None
-			for gridname in self.argdict.keys():
-				replaced_body = [ast_tools.ASTNodeReplacer(
-								ast.Name(gridname, None), ast.Name("_my_"+gridname, None)).visit(x) for x in node.body]
-			body.extend([self.visit(x) for x in replaced_body])
+			for gridname in self.argdict:
+				replacer = ast_tools.ASTNodeReplacer(ast.Name(gridname, None),
+																						 ast.Name('_my_' + gridname, None))
+				replaced_body = [replacer.visit(n) for n in node.body]
+			body.extend(self.visit(n) for n in replaced_body)
 
 			cur_node.body = body
 
@@ -255,15 +256,12 @@ class StencilKernel(object):
 				     
 			grid = self.argdict[node.grid]
 			debug_print(node.dist)
-			for n in grid.neighbor_definition[node.dist]:
-				block.append(cpp_ast.Assign(target,
-								self.gen_array_macro(node.grid,
-										     map(lambda x,y: x + "+(" + str(y) + ")",
-											 self.dim_vars,
-											 n))))
-
-				block.extend( [self.visit(z) for z in node.body] )
-				
+			for neighbor in grid.neighbor_definition[node.dist]:
+				point = ['(%s + %d)' % (v, n) for v, n in zip(self.dim_vars, neighbor)]
+				array_index = self.gen_array_macro(node.grid, point)
+				block.append(cpp_ast.Assign(target, array_index))
+				debug_print(node.body)
+				block.extend([self.visit(z) for z in node.body])
 
 			debug_print(block)
 			return block

@@ -59,6 +59,14 @@ class Call(Expression):
     def __str__(self):
         return "%s(%s)" % (self.func, ", ".join(map(str, self.args)))
 
+class Attribute(Expression):
+    def __init__(self, attr, value):
+        self.attr = attr
+        self.value = value
+
+    def __str__(self):
+        return '%s.%s' % (self.value, self.attr)
+
 # expression types not used in this example:
 
 class PostfixUnaryOp(Expression):

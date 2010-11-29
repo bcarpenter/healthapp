@@ -35,5 +35,11 @@ class StencilStruct(object):
 
     @staticmethod
     def struct_from_fields(fields):
-        struct_fields = tuple(fields)
-        return lambda data: StencilStruct(struct_fields, data)
+        class Struct(StencilStruct):
+
+            _fields = tuple(fields)
+
+            def __init__(self, data):
+                StencilStruct.__init__(self, Struct._fields, data)
+
+        return Struct

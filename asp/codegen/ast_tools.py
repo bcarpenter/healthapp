@@ -84,6 +84,9 @@ class ConvertAST(ast.NodeTransformer):
         return Assign(self.visit(node.targets[0]),
                 self.visit(node.value))
 
+    def visit_Attribute(self, node):
+        return Attribute(node.attr, self.visit(node.value))
+
     def visit_FunctionDef(self, node):
         debug_print("In FunctionDef:")
         debug_print(ast.dump(node))

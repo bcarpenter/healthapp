@@ -167,5 +167,67 @@ class Stencil1dAnd3dTests(unittest.TestCase):
 		self.assertEqual(self.out_grid[4], 2.0)
 
 
+class StencilStructConvertASTTests(unittest.TestCase):
+    def setUp(self):
+        class MyKernel(StencilKernel):
+            def kernel(self, in_grid, out_grid):
+                for x in out_grid.interior_points():
+                    for y in in_grid.neighbors(x, 1):
+                        out_grid[x].out_a = out_grid[x].out_b + in_grid[y].in_b
+
+        self.kernel = MyKernel()
+        self.in_fields = ('in_a', 'in_b')
+        self.out_fields = ('out_a', 'out_b', 'out_c')
+        self.in_grid = StencilGrid([5, 5], self.in_fields)
+        self.out_grid = StencilGrid([5, 5], self.out_fields)
+        self.argdict = {'in_grid': self.in_grid, 'out_grid': self.out_grid}
+
+    def test_StencilConvertAST_array_macro(self):
+        import re
+        converter = StencilKernel.StencilConvertAST(self.argdict)
+        result = converter.gen_array_macro_definition('in_grid')
+        self.assertTrue(re.search("array_macro", str(result)))
+        self.assertTrue(re.search("#define", str(result)))
+
+    def test_StencilConvertAST_array_macro_use(self):
+        converter = StencilKernel.StencilConvertAST(self.argdict)
+        result = converter.gen_array_macro('in_grid', [3,4])
+        self.assertEqual(result, "_in_grid_array_macro(3,4)")
+
+    def xtest_StencilConvertAST_array_replacement(self):
+        import asp.codegen.python_ast as ast
+        n = ast.Subscript(ast.Name("grid", None), ast.Index(ast.Num(1)), None)
+        result = StencilKernel.StencilConvertAST(self.argdict).visit(n)
+        self.assertEqual(str(result), "_my_grid[1]")
+
+    def xtest_StencilConvertAST_array_unpack_to_double(self):
+        converter = StencilKernel.StencilConvertAST(self.argdict)
+        statements = []
+        for variable in self.argdict:
+            statements.append(converter.gen_array_unpack(variable))
+        code = ''.join(stmt.generate().next() for stmt in statements)
+        self.assertEqual(code, ("double *_my_out_grid = (double *) PyArray_DATA(out_grid);"
+                                                        "double *_my_in_grid = (double *) PyArray_DATA(in_grid);"))
+    
+    def xtest_visit_StencilNeighborIter(self):
+        import re
+        import asp.codegen.python_ast as ast
+        code = 'in_grid[x].in_a = in_grid[x].in_b + out_grid[y].out_a'
+        n = StencilKernel.StencilNeighborIter('in_grid',
+					      [ast.parse(code).body[0]],
+					      ast.Name('y', None),
+					      1)
+        converter = StencilKernel.StencilConvertAST(self.argdict)
+        # visit_StencilNeighborIter expects to have dim vars defined already
+        converter.gen_dim_var(0)
+        converter.gen_dim_var(1)
+        result = converter.visit(n)
+        self.assertTrue(re.search("array_macro", str(result)))
+
+    def test_whole_thing(self):
+        self.kernel.kernel(self.in_grid, self.out_grid)
+        #self.assertEqual(self.out_grid[5,5],4.0)
+
+
 if __name__ == '__main__':
 	unittest.main()
