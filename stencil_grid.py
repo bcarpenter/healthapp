@@ -54,8 +54,8 @@ class StencilGrid(object):
         """
         Sets the number of interior points in each dimension
         """
-        self.interior = [x-2*self.ghost_depth for x in self.shape]
-
+        self.interior = [size - self.ghost_depth * 2 for size in self.shape]
+        
     def set_default_neighbor_definition(self):
         """
         Sets the default for neighbors[0] and neighbors[1].  Note that neighbors[1]

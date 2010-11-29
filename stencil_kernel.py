@@ -46,10 +46,10 @@ class StencilKernel(object):
 		#FIXME: need to somehow match arg names to args
 		argnames = map(lambda x: str(x.id), self.kernel_ast.body[0].args.args)
 		argdict = dict(zip(argnames[1:], args))
-		debug_print(argdict)
+		debug_print('Kernel arguments:\n' + str(argdict))
 
 		phase2 = StencilKernel.StencilProcessAST(argdict).visit(self.kernel_ast)
-		debug_print(ast.dump(phase2))
+		debug_print('Phase 2 AST:\n' + ast.dump(phase2))
 		phase3 = StencilKernel.StencilConvertAST(argdict).visit(phase2)
 
 		from asp.jit import asp_module
@@ -160,10 +160,19 @@ class StencilKernel(object):
 			self.dim_vars.append(variable)
 			return variable
 
-		def gen_array_unpack(self):
-			str = "double* _my_%s = (double *) PyArray_DATA(%s);"
-			return '\n'.join([str % (x, x) for x in self.argdict.keys()])
-		
+		def gen_array_unpack(self, grid_name, type_name=None):
+			type_name = 'double' if type_name is None else type_name
+			array_decl = "{0} *_my_{1} = ({0} *) PyArray_DATA({1})"
+			return cpp_ast.Statement(array_decl.format(type_name, grid_name))
+
+		def gen_struct_declaration(self, struct):
+			name = '_abc' # TODO: change this
+			fields = []
+			for field in struct._fields:
+				fields.append(cpp_ast.Value('double', field))
+			declarator = cpp_ast.Struct(name, fields)
+			return name, declarator
+
 		# all arguments are PyObjects
 		def visit_arguments(self, node):
 			return [cpp_ast.Pointer(cpp_ast.Value("PyObject", self.visit(x))) for x in node.args[1:]]
@@ -181,43 +190,61 @@ class StencilKernel(object):
 			# 	start2 = "int %s = %s" % (dim2_var, str(array.ghost_depth))
 			# 	condition2 = "%s < %s" % (dim2_var, str(array.shape[1]-array.ghost_depth))
 			# 	update2 = "%s++" % dim2_var
-			ret_node = None
-			cur_node = None
 
+			definitions = cpp_ast.Module()
+			# Define macros for linearizing n-D array indices.
+			definitions.extend(self.gen_array_macro_definition(v)
+												 for v in self.argdict)
+			# If the programmer is using structs as stencil node values, generate
+			# struct definitions.
+			struct_names, stencil_types = {}, {}
+			for variable, value in self.argdict.items():
+				if value.struct is not None:
+					if value.struct not in struct_names:
+						# Generate a struct definition for the given type.
+						name, declarator = self.gen_struct_declaration(value.struct)
+						struct_names[value.struct] = name
+						definitions.append(declarator)
+					stencil_types[variable] = 'struct ' + struct_names[value.struct]
+
+			# Add the array declarations.
+			for variable in self.argdict:
+				if variable in stencil_types:
+					type_name = stencil_types[variable]
+					declaration = self.gen_array_unpack(variable, type_name)
+				else:
+					declaration = self.gen_array_unpack(variable)
+				definitions.append(declaration)
+
+			# Iteratively generate the contents of the top-level loop.
+			loop_node = None
 			for d in xrange(dim):
 				dim_var = self.gen_dim_var(d)
 				start = "int %s = %s" % (dim_var, str(array.ghost_depth))
 			 	condition = "%s < %s" % (dim_var,  str(array.shape[d]-array.ghost_depth))
 				update = "%s++" % dim_var
 				if d == 0:
-					ret_node = cpp_ast.For(start, condition, update, cpp_ast.Block())
-					cur_node = ret_node
+					loop_node = cpp_ast.For(start, condition, update, cpp_ast.Block())
+					cur_node = loop_node
 				else:
 					cur_node.body = cpp_ast.For(start, condition, update, cpp_ast.Block())
 					cur_node = cur_node.body
 		
-
 			body = cpp_ast.Block()
-			body.extend([self.gen_array_macro_definition(x) for x in self.argdict])
-
-
-			body.append(cpp_ast.Statement(self.gen_array_unpack()))
-			
 			body.append(cpp_ast.Value("int", self.visit(node.target)))
 			body.append(cpp_ast.Assign(self.visit(node.target),
 									   self.gen_array_macro(node.grid, self.dim_vars)))
-
-
-
 
 			replaced_body = None
 			for gridname in self.argdict.keys():
 				replaced_body = [ast_tools.ASTNodeReplacer(
 								ast.Name(gridname, None), ast.Name("_my_"+gridname, None)).visit(x) for x in node.body]
 			body.extend([self.visit(x) for x in replaced_body])
-			
+
 			cur_node.body = body
 
+			ret_node = definitions
+			ret_node.append(loop_node)
 			return ret_node
 
 		def visit_StencilNeighborIter(self, node):

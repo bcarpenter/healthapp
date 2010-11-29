@@ -88,9 +88,13 @@ class StencilConvertASTTests(unittest.TestCase):
 
 
 	def test_StencilConvertAST_array_unpack_to_double(self):
-		result = StencilKernel.StencilConvertAST(self.argdict).gen_array_unpack()
-		self.assertEqual(result, "double* _my_out_grid = (double *) PyArray_DATA(out_grid);\n" +
-			"double* _my_in_grid = (double *) PyArray_DATA(in_grid);")
+		converter = StencilKernel.StencilConvertAST(self.argdict)
+		statements = []
+		for variable in self.argdict:
+			statements.append(converter.gen_array_unpack(variable))
+		code = ''.join(stmt.generate().next() for stmt in statements)
+		self.assertEqual(code, ("double *_my_out_grid = (double *) PyArray_DATA(out_grid);"
+														"double *_my_in_grid = (double *) PyArray_DATA(in_grid);"))
 
 	def test_visit_StencilInteriorIter(self):
 		import asp.codegen.python_ast as ast, re
@@ -99,8 +103,7 @@ class StencilConvertASTTests(unittest.TestCase):
 						      [ast.Pass()],
 						      ast.Name("targ", None))
 		result = StencilKernel.StencilConvertAST(self.argdict).visit(n)
-		debug_print(str(result))
-		self.assertTrue(re.search("For", str(type(result))))
+		self.assertTrue(re.search("Module", str(type(result))))
 	
 	def test_visit_StencilNeighborIter(self):
 		import asp.codegen.python_ast as ast, re
@@ -154,11 +157,9 @@ class Stencil1dAnd3dTests(unittest.TestCase):
 						      [ast.Pass()],
 						      ast.Name("targ", None))
 		result = StencilKernel.StencilConvertAST(self.argdict).visit(n)
-
-		self.assertTrue(re.search("For", str(type(result))))
+		self.assertTrue(re.search("Module", str(type(result))))
 
 	def test_whole_thing(self):
-		import numpy
 		import numpy
 		self.in_grid.data = numpy.ones([10])
 		self.kernel.kernel(self.in_grid, self.out_grid)
