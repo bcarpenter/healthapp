@@ -46,7 +46,7 @@ class StencilKernel(object):
 		#FIXME: need to somehow match arg names to args
 		argnames = map(lambda x: str(x.id), self.kernel_ast.body[0].args.args)
 		argdict = dict(zip(argnames[1:], args))
-		debug_print('Kernel arguments:\n' + str(argdict))
+		#debug_print('Kernel arguments:\n' + str(argdict))
 
 		phase2 = StencilKernel.StencilProcessAST(argdict).visit(self.kernel_ast)
 		debug_print('Phase 2 AST:\n' + ast.dump(phase2))
@@ -165,13 +165,38 @@ class StencilKernel(object):
 			array_decl = "{0} *_my_{1} = ({0} *) PyArray_DATA({1})"
 			return cpp_ast.Statement(array_decl.format(type_name, grid_name))
 
-		def gen_struct_declaration(self, struct):
-			name = '_' + str(hash(struct._fields))
-			fields = []
-			for field in struct._fields:
-				fields.append(cpp_ast.Value('double', field))
-			declarator = cpp_ast.Struct(name, fields)
-			return name, declarator
+		def python_to_cpp_type(self, dtype):
+			"""Returns the name and declarator for the C++ version of the
+			specified type. If the given type is a C++ primitive, the
+			declarator is None.
+			"""
+			if dtype.type is numpy.void:
+				fields = []
+				for field in dtype.names:
+					subtype, _ = dtype.fields[field]
+					subname, subdeclarator = self.python_to_cpp_type(subtype)
+					if subdeclarator is not None:
+						subname = subdeclarator.inline()
+					fields.append(cpp_ast.Value(subname, field))
+				struct_name = '_' + dtype.name
+				return ('struct ' + struct_name,
+						cpp_ast.Struct(struct_name, fields))
+
+			if dtype.type is numpy.float32:
+				name = 'float'
+			elif dtype.type is numpy.float64:
+				name = 'double'
+			elif dtype.type is numpy.int8:
+				name = 'char'
+			elif dtype.type is numpy.int16:
+				name = 'short'
+			elif dtype.type is numpy.int32:
+				name = 'int'
+			elif dtype.type is numpy.int64:
+				name = 'long'
+			else:
+				raise TypeError('unknown data type: %s' % (dtype,))
+			return name, None
 
 		# all arguments are PyObjects
 		def visit_arguments(self, node):
@@ -196,25 +221,20 @@ class StencilKernel(object):
 			definitions.extend(self.gen_array_macro_definition(v)
 												 for v in self.argdict)
 			# If the programmer is using structs as stencil node values, generate
-			# struct definitions.
-			struct_names, stencil_types = {}, {}
-			for variable, value in self.argdict.items():
-				if value.struct is not None:
-					if value.struct not in struct_names:
-						# Generate a struct definition for the given type.
-						name, declarator = self.gen_struct_declaration(value.struct)
-						struct_names[value.struct] = name
+			# struct definitions. Map data types to their names.
+			type_names, stencil_types = {}, {}
+			for variable, grid in self.argdict.items():
+				if grid.dtype not in type_names:
+					type_name, declarator = self.python_to_cpp_type(grid.dtype)
+					type_names[grid.dtype] = type_name
+					if declarator is not None:
 						definitions.append(declarator)
-					stencil_types[variable] = 'struct ' + struct_names[value.struct]
+				stencil_types[variable] = type_names[grid.dtype]
 
 			# Add the array declarations.
 			for variable in self.argdict:
-				if variable in stencil_types:
-					type_name = stencil_types[variable]
-					declaration = self.gen_array_unpack(variable, type_name)
-				else:
-					declaration = self.gen_array_unpack(variable)
-				definitions.append(declaration)
+				type_name = stencil_types[variable]
+				definitions.append(self.gen_array_unpack(variable, type_name))
 
 			# Iteratively generate the contents of the top-level loop.
 			loop_node = None
@@ -260,8 +280,7 @@ class StencilKernel(object):
 				point = ['(%s + %d)' % (v, n) for v, n in zip(self.dim_vars, neighbor)]
 				array_index = self.gen_array_macro(node.grid, point)
 				block.append(cpp_ast.Assign(target, array_index))
-				debug_print(node.body)
 				block.extend([self.visit(z) for z in node.body])
 
-			debug_print(block)
+			debug_print('StencilNeighborIter block:\n' + str(block))
 			return block

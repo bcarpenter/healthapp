@@ -1,28 +1,25 @@
 class StencilStruct(object):
 
-    def __init__(self, fields, data):
-        if len(data) != len(fields):
+    def __init__(self, dtype, data):
+        if len(data) != len(dtype.names):
             raise Exception('data must match number of fields')
-        self._fields = tuple(fields)
+        self._fields = tuple(dtype.names)
         self.data = data
 
     def __getattr__(self, name):
         try:
-            index = self._fields.index(name)
-        except ValueError:
+            return self.data[name]
+        except IndexError:
             return object.__getattribute__(self, name)
-        return self.data[index]
 
     def __setattr__(self, name, value):
         if name in ('_fields', 'data'):
             object.__setattr__(self, name, value)
         else:
             try:
-                index = self._fields.index(name)
-            except ValueError:
+                self.data[name] = value
+            except IndexError:
                 object.__setattr__(self, name, value)
-            else:
-                self.data[index] = value
 
     def __getitem__(self, key):
         return self.data[key]

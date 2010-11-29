@@ -1,23 +1,16 @@
 from itertools import product
-from stencil_struct import *
+from stencil_struct import StencilStruct
 import numpy
 
 class StencilGrid(object):
 
-    def __init__(self, size, fields=None):
+    def __init__(self, size, dtype=float):
         self.dim = len(size)
         self.shape = size
         self.ghost_depth = 1
-
-        # Support structs of floats in addition to plain floats.
-        if fields is None:
-            self.data = numpy.zeros(size)
-            self.struct = None
-        else:
-            self.data = numpy.zeros(size + [len(fields)])
-            # Define a proxy that wraps an array and has the same fields as the
-            # programmer-specified struct.
-            self.struct = StencilStruct.struct_from_fields(fields)
+        self.dtype = (dtype if isinstance(dtype, numpy.dtype) else
+                      numpy.dtype(dtype))
+        self.data = numpy.zeros(size, dtype)
 
         self.set_grid_variables()
         self.set_interior()
@@ -30,22 +23,15 @@ class StencilGrid(object):
         notation. If the data type of this stencil grid is a struct type, the
         returned item is a struct with the same fields.
         """
-        if self.struct is None:
-            return self.data[key]
-        return self.struct(self.data[key])
+        # For struct types, wrap the data in a proxy object that allows the
+        # dot (.) notation to access attributes instead of the [] notation
+        # that numpy's dtype objects use.
+        if self.dtype.type is numpy.void:
+            return StencilStruct(self.dtype, self.data[key])
+        return self.data[key]
 
     def __setitem__(self, key, value):
-        if self.struct is None:
-            self.data[key] = value
-        elif isinstance(value, StencilStruct):
-            # Assigning a struct object to a stencil grid entails copying the
-            # values in the struct to the grid, and then ensuring that the
-            # struct object is backed by the grid.
-            if value.data is not self.data[key]:
-                self.data[key][:] = value.data
-                value.data = self.data
-        else:
-            raise Exception('must assign either a float or struct object')
+        self.data[key] = value
 
     def set_grid_variables(self):
         self.grid_variables = ["DIM"+str(x) for x in range(0,self.dim)]
@@ -72,8 +58,6 @@ class StencilGrid(object):
                 tmp[x] += y
                 self.neighbor_definition[1].append(tuple(tmp))
 
-
-
     def interior_points(self):
         """
         Iterator over the interior points of the grid.  Only executed
@@ -95,7 +79,6 @@ class StencilGrid(object):
         language/library.
         """
         pass
-
 
     def neighbors(self, center, dist):
         """
