@@ -178,7 +178,7 @@ class StencilKernel(object):
 					if subdeclarator is not None:
 						subname = subdeclarator.inline()
 					fields.append(cpp_ast.Value(subname, field))
-				struct_name = '_' + dtype.name
+				struct_name = '_void_' + hex(abs(hash(dtype)))[2:]
 				return ('struct ' + struct_name,
 						cpp_ast.Struct(struct_name, fields))
 
