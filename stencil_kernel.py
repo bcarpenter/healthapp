@@ -165,39 +165,6 @@ class StencilKernel(object):
 			array_decl = "{0} *_my_{1} = ({0} *) PyArray_DATA({1})"
 			return cpp_ast.Statement(array_decl.format(type_name, grid_name))
 
-		def python_to_cpp_type(self, dtype):
-			"""Returns the name and declarator for the C++ version of the
-			specified type. If the given type is a C++ primitive, the
-			declarator is None.
-			"""
-			if dtype.type is numpy.void:
-				fields = []
-				for field in dtype.names:
-					subtype, _ = dtype.fields[field]
-					subname, subdeclarator = self.python_to_cpp_type(subtype)
-					if subdeclarator is not None:
-						subname = subdeclarator.inline()
-					fields.append(cpp_ast.Value(subname, field))
-				struct_name = '_void_' + hex(abs(hash(dtype)))[2:]
-				return ('struct ' + struct_name,
-						cpp_ast.Struct(struct_name, fields))
-
-			if dtype.type is numpy.float32:
-				name = 'float'
-			elif dtype.type is numpy.float64:
-				name = 'double'
-			elif dtype.type is numpy.int8:
-				name = 'char'
-			elif dtype.type is numpy.int16:
-				name = 'short'
-			elif dtype.type is numpy.int32:
-				name = 'int'
-			elif dtype.type is numpy.int64:
-				name = 'long'
-			else:
-				raise TypeError('unknown data type: %s' % (dtype,))
-			return name, None
-
 		# all arguments are PyObjects
 		def visit_arguments(self, node):
 			return [cpp_ast.Pointer(cpp_ast.Value("PyObject", self.visit(x))) for x in node.args[1:]]
@@ -225,7 +192,7 @@ class StencilKernel(object):
 			type_names, stencil_types = {}, {}
 			for variable, grid in self.argdict.items():
 				if grid.dtype not in type_names:
-					type_name, declarator = self.python_to_cpp_type(grid.dtype)
+					type_name, declarator = cpp_ast.cpp_type(grid.dtype)
 					type_names[grid.dtype] = type_name
 					if declarator is not None:
 						definitions.append(declarator)

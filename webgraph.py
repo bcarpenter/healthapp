@@ -1,9 +1,9 @@
 from collections import namedtuple
 from itertools import product
 
-from numpy import zeros
-
 from stencil_grid import StencilGrid
+
+import numpy
 
 class WebGraph(object):
 
@@ -122,7 +122,7 @@ Side.RIGHT = Side('right')
 
 class Line(StencilGrid):
 
-    def __init__(self, size):
+    def __init__(self, size, dtype=float):
         # Ensure that 'size' is a single-element sequence since lines must be
         # 1-D stencil grids. Alternatively, it may be a scalar value.
         if isinstance(size, list) or isinstance(size, tuple):
@@ -133,7 +133,7 @@ class Line(StencilGrid):
             self.size = size
         else:
             raise Exception('invalid size %s' % (size,))
-        StencilGrid.__init__(self, [self.size])
+        StencilGrid.__init__(self, [self.size], dtype)
 
     def __str__(self):
         values = ('.4f' % (self[ii],) for ii in range(self.size))
@@ -151,12 +151,13 @@ class Line(StencilGrid):
 
 class Junction(object):
 
-    def __init__(self, line_sides, size):
+    def __init__(self, line_sides, size, dtype=float):
         self.line_sides = dict(line_sides)
         self.size = size
+        self.dtype = numpy.dtype(dtype)
         self.line_values = {}
         for line_id in self.line_sides:
-            self.line_values[line_id] = zeros(self.size)
+            self.line_values[line_id] = numpy.zeros(self.size, self.dtype)
 
     def key(self):
         return tuple(sorted(self.line_sides.items()))
@@ -166,8 +167,8 @@ class Junction(object):
 
 class Boundary(Junction):
     
-    def __init__(self, line_side, size):
-        Junction.__init__(self, (line_side,), size)
+    def __init__(self, line_side, size, dtype=float):
+        Junction.__init__(self, (line_side,), size, dtype)
         self.line_id = iter(self.line_sides).next()
         self.side = self.line_sides[self.line_id]
         self.values = self.line_values[self.line_id]

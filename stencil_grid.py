@@ -8,8 +8,7 @@ class StencilGrid(object):
         self.dim = len(size)
         self.shape = size
         self.ghost_depth = 1
-        self.dtype = (dtype if isinstance(dtype, numpy.dtype) else
-                      numpy.dtype(dtype))
+        self.dtype = numpy.dtype(dtype)
         self.data = numpy.zeros(size, dtype)
 
         self.set_grid_variables()
