@@ -30,8 +30,8 @@ if __name__ == '__main__':
     lines = [Line.create_from_sequence(line) for line in lines]
 
     line_sides = [(0, Side.RIGHT), (1, Side.LEFT), (2, Side.LEFT)]
-    junctions = [Junction(line_sides, 2)]
-    node_graph = WebGraph(lines, junctions, boundary_size=2)
+    junctions = [Junction(line_sides, 3)]
+    node_graph = WebGraph(lines, junctions, boundary_size=3)
     interface_graph = create_interface_graph(node_graph, junction_size=1,
                                              boundary_size=1)
 

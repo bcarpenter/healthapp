@@ -1,3 +1,4 @@
+import numpy
 import unittest
 from stencil_grid import *
 from stencil_struct import *
@@ -56,19 +57,20 @@ class BasicTests(unittest.TestCase):
         self.assertEquals(len([x for x in grid.neighbors([1],1)]), 2)
 
     def test_struct_type_1D(self):
-        fields = ('a', 'b', 'c')
-        grid = StencilGrid([10], fields)
+        dtype = numpy.dtype([('a', float), ('b', float), ('c', float)])
+        grid = StencilGrid([10], dtype)
         self.assertEquals(len(tuple(grid.neighbors([1], 1))), 2)
 
     def test_struct_type_2D(self):
-        fields = ('a', 'b', 'c')
-        grid = StencilGrid([10, 10], fields)
+        dtype = numpy.dtype([('a', float), ('b', float), ('c', float)])
+        grid = StencilGrid([10, 10], dtype)
         self.assertEquals(len(tuple(grid.neighbors([1, 1], 1))), 4)
 
     def test_struct_field_access_1D(self):
         # This test should probably be split into smaller tests...
-        fields = ('a', 'b', 'c', 'd')
-        grid = StencilGrid([10], fields)
+        dtype = numpy.dtype([('a', float), ('b', float),
+                             ('c', float), ('d', float)])
+        grid = StencilGrid([10], dtype)
 
         # Test writing to the stencil nodes in various ways.
         counter = 1.0
