@@ -40,5 +40,12 @@ if __name__ == '__main__':
     for boundary in interface_graph.boundaries:
         print boundary, boundary.values
 
-    compute_interfaces = KernelPass(None, None, None)
+    class NodeLineKernel(LineKernel):
+        def kernel(self, in_grid, out_grid):
+            for x in out_grid.interior_points():
+                for y in in_grid.neighbors(x, 1):
+                    out_grid[x] = out_grid[x] + in_grid[y]
+
+    compute_interfaces = KernelPass(NodeLineKernel(), None, None)
     compute_nodes = KernelPass(None, None, None)
+    compute_interfaces.compute(node_graph, interface_graph)
