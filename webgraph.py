@@ -143,8 +143,8 @@ class Line(StencilGrid):
         return 'Line(%s)' % (self.size,)
 
     @staticmethod
-    def create_from_sequence(seq):
-        line = Line([len(seq)])
+    def create_from_sequence(seq, dtype=float):
+        line = Line([len(seq)], dtype)
         for ii, value in enumerate(seq):
             line[ii] = value
         return line

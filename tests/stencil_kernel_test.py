@@ -209,8 +209,13 @@ class InterfaceKernelTests(unittest.TestCase):
                 self.out_type = numpy.dtype([('A', float), ('u', float), ('p', float)])
                 self.inline = Line([5], self.in_type)
                 self.outline = Line([5], self.out_type)
+                self.argdict = {'in_grid': self.inline, 'out_grid': self.outline}
         def test_line_kernel(self):
+                import numpy
+                self.inline.data = numpy.ones(self.inline.data.shape, self.inline.data.dtype)
                 self.kernel.kernel(self.inline,self.outline)
+                self.assertEqual(self.outline[2].p, 45.0)
+        
                 
 if __name__ == '__main__':
 	unittest.main()

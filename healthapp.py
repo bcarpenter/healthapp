@@ -1,5 +1,6 @@
 from webgraph import WebGraph, Side, Line, Junction, Boundary
 from webkernel import LineKernel, JunctionKernel, BoundaryKernel, KernelPass
+import numpy
 from math import sqrt
 
 class InterfaceKernel(LineKernel):
@@ -21,6 +22,7 @@ class InterfaceKernel(LineKernel):
 				# Strategy: calculate all uL,uR values, and use them to calculate the uI output values
 
 				# uL(2,n) = U(1,n) + B(1,1)*U(1,n).*(.5*(1-(U(1,2)+c)*delt./delx(1)))
+				print inline[y]
 				uL_A = inline[y].A + inline[y].A*(0.5*(1-inline[y].A+self.c)*self.delt/self.delx)
 				uL_u = inline[y].u + inline[y].u*(0.5*(1-inline[y].u+self.c)*self.delt/self.delx)
 				uL_p = inline[y].p + inline[y].p*(0.5*(1-inline[y].p+self.c)*self.delt/self.delx)
@@ -62,11 +64,12 @@ def create_interface_graph(node_graph, junction_size, boundary_size):
     return WebGraph(lines, junctions, boundary_size)
 
 if __name__ == '__main__':
-    lines = [(1, 2, 3, 4, 5, 6, 7, 8, 9),
-             (11, 12, 13, 14, 15, 16, 17, 18, 19),
-             (21, 22, 23, 24, 25, 26, 27, 28, 29)]
-    lines = [Line.create_from_sequence(line) for line in lines]
-
+    lines = [((1,1,1), (2,2,2), (3,3,3), (4,4,4), (5,5,5), (6,6,6), (7,7,7), (8,8,8), (9,9,9)),
+             ((11,11,11), (12,12,12), (13,13,13), (14,14,14), (15,15,15), (16,16,16), (17,17,17), (18,18,18), (19,19,19)),
+             ((21,21,21), (22,22,22), (23,23,23), (24,24,24), (25,25,25), (26,26,26), (27,27,27), (28,28,28), (29,29,29))]
+    line_dtype = numpy.dtype([('A', float), ('u', float), ('p', float)])
+    lines = [Line.create_from_sequence(line, line_dtype) for line in lines]
+    
     line_sides = [(0, Side.RIGHT), (1, Side.LEFT), (2, Side.LEFT)]
     junctions = [Junction(line_sides, 3)]
     node_graph = WebGraph(lines, junctions, boundary_size=3)
@@ -79,7 +82,7 @@ if __name__ == '__main__':
                 for y in in_grid.neighbors(x, 1):
                     out_grid[x] = out_grid[x] + in_grid[y]
 
-    compute_interfaces = KernelPass(NodeLineKernel(), None, None)
+    compute_interfaces = KernelPass(InterfaceKernel(1,2,3,4,5,6,7), None, None)
     compute_nodes = KernelPass(None, None, None)
     compute_interfaces.compute(node_graph, interface_graph)
 
