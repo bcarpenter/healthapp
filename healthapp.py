@@ -49,14 +49,15 @@ def create_interface_graph(node_graph, junction_size, boundary_size):
     for line_id in WebGraph.indices(node_graph.lines):
         node_line = node_graph.get_line(line_id)
         # Add 2 to each line length since we are adding a vertex on each end.
-        lines.append(Line(node_line.shape[0] + 2))
+        lines.append(Line(node_line.shape[0] + 2, node_line.dtype))
 
     junctions = []
     for junction in node_graph.junctions:
         # We don't necessarily use the same junction size as the original graph
         # since there is no constraint between junction sizes of different
         # graphs.
-        junctions.append(Junction(junction.line_sides, junction_size))
+        junctions.append(Junction(junction.line_sides, junction_size,
+				  junction.dtype))
 
     return WebGraph(lines, junctions, boundary_size)
 
