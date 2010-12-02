@@ -26,8 +26,8 @@ class StencilGrid(object):
         # dot (.) notation to access attributes instead of the [] notation
         # that numpy's dtype objects use.
         if self.dtype.type is numpy.void:
-            return StencilStruct(self.dtype, self.data[key])
-        return self.data[key]
+            return StencilStruct(self.dtype, self.data.__getitem__(key))
+        return self.data.__getitem__(key)
 
     def __setitem__(self, key, value):
         self.data[key] = value
