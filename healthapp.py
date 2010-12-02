@@ -34,11 +34,6 @@ if __name__ == '__main__':
     node_graph = WebGraph(lines, junctions, boundary_size=2)
     interface_graph = create_interface_graph(node_graph, junction_size=1,
                                              boundary_size=1)
-    print interface_graph.lines
-    for junction in interface_graph.junctions:
-        print junction, junction.line_values
-    for boundary in interface_graph.boundaries:
-        print boundary, boundary.values
 
     class NodeLineKernel(LineKernel):
         def kernel(self, in_grid, out_grid):
@@ -49,3 +44,12 @@ if __name__ == '__main__':
     compute_interfaces = KernelPass(NodeLineKernel(), None, None)
     compute_nodes = KernelPass(None, None, None)
     compute_interfaces.compute(node_graph, interface_graph)
+
+    print 'Input lines:'
+    for line in node_graph.lines:
+        print line.data
+
+    print 'Output lines:'
+    for line in interface_graph.lines:
+        print line.data
+

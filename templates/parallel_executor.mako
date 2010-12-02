@@ -7,7 +7,6 @@ void *_hook_${task.name}(void *args) {
 }
 
 %endfor
-
 void execute(${', '.join(', '.join('PyObject *' + arg for arg in task.args) for task in tasks)}) {
   pthread_t threads[${len(tasks)}];
   void *(*thread_tasks[${len(tasks)}])(void *);
@@ -16,14 +15,15 @@ void execute(${', '.join(', '.join('PyObject *' + arg for arg in task.args) for 
   // Assign the thread tasks and bundle up the thread arguments.
 %for ii, task in enumerate(tasks):
   thread_tasks[${ii}] = &_hook_${task.name};
-  thread_args[${ii}] = (PyObject ** ) malloc(sizeof(PyObject *) * ${len(task.args)});
+  thread_args[${ii}] = (PyObject **) malloc(sizeof(PyObject *) * ${len(task.args)});
   %for jj, arg in enumerate(task.args):
   thread_args[${ii}][${jj}] = ${arg};
   %endfor
 
 %endfor
+
   for (int ii = 0; ii < ${len(tasks)}; ii++) {
-    pthread_create(&threads[ii], NULL, thread_tasks[ii], &thread_args[ii]);
+    pthread_create(&threads[ii], NULL, thread_tasks[ii], thread_args[ii]);
   }
 
   for (int ii = 0; ii < ${len(tasks)}; ii++) {

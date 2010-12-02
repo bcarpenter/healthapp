@@ -90,7 +90,7 @@ class WebGraph(object):
         if side is Side.LEFT:
             line[:len(values)] = values
         elif side is Side.RIGHT:
-            line[len(values):] = values
+            line[-len(values):] = values
         else:
             raise Exception('unknown side %s' % (side,))
 
@@ -136,7 +136,7 @@ class Line(StencilGrid):
         StencilGrid.__init__(self, [self.size], dtype)
 
     def __str__(self):
-        values = ('.4f' % (self[ii],) for ii in range(self.size))
+        values = ('%.5g' % (self[ii],) for ii in range(self.size))
         return '[%s]' % (', '.join(values))
 
     def __repr__(self):
