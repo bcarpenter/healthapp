@@ -32,7 +32,8 @@ p4=[3000 3000 0 0.001];
 n12=3000;
 n23=3000;
 n24=3000;
-[skel,seg]=HA_datacreate(p1,p2,p3,p4,n12,n23,n24);
+[skel,seg]=HA_datacreate();
+% [skel,seg]=HA_datacreate(p1,p2,p3,p4,n12,n23,n24);
 
 
 [domain,k] = newgridgen(skel,seg);
@@ -152,20 +153,11 @@ while t<tmax
     
     %Calculate Interface values
     for i=1:length(k)-1
-        
-        
         %Equations PER ARTERY
-        
-        uL(k(i)+i+1:k(i+1)+i,1)=U(k(i)+1:k(i+1),1)+B(k(i)+1:k(i+1),k(i)+1:k(i+1))*U(k(i)+1:k(i+1),1).*(.5*(1-lambda1(k(i)+1:k(i+1))*delt./delx(k(i)+1:k(i+1))));
-        uL(k(i)+i+1:k(i+1)+i,2)=U(k(i)+1:k(i+1),2)+B(k(i)+1:k(i+1),k(i)+1:k(i+1))*U(k(i)+1:k(i+1),2).*(.5*(1-lambda1(k(i)+1:k(i+1))*delt./delx(k(i)+1:k(i+1))));%+(delt/(2*rho))*f(k(i)+1:k(i+1),:)./U(k(i)+1:k(i+1),1);
-        uL(k(i)+i+1:k(i+1)+i,3)=U(k(i)+1:k(i+1),3)+B(k(i)+1:k(i+1),k(i)+1:k(i+1))*U(k(i)+1:k(i+1),3).*(.5*(1-lambda1(k(i)+1:k(i+1))*delt./delx(k(i)+1:k(i+1))));
-        
-        
-        uR(k(i)+i:k(i+1)-1+i,1)=U(k(i)+1:k(i+1),1)-B(k(i)+1:k(i+1),k(i)+1:k(i+1))*U(k(i)+1:k(i+1),1).*(.5*(1+lambda2(k(i)+1:k(i+1))*delt./delx(k(i)+1:k(i+1))));
-        uR(k(i)+i:k(i+1)-1+i,2)=U(k(i)+1:k(i+1),2)-B(k(i)+1:k(i+1),k(i)+1:k(i+1))*U(k(i)+1:k(i+1),2).*(.5*(1+lambda2(k(i)+1:k(i+1))*delt./delx(k(i)+1:k(i+1))));%+(delt/(2*rho))*f(k(i)+1:k(i+1),:)./U(k(i)+1:k(i+1),1);
-        uR(k(i)+i:k(i+1)-1+i,3)=U(k(i)+1:k(i+1),3)-B(k(i)+1:k(i+1),k(i)+1:k(i+1))*U(k(i)+1:k(i+1),3).*(.5*(1+lambda2(k(i)+1:k(i+1))*delt./delx(k(i)+1:k(i+1))));
-        
-        
+        for n=1:3 %A,u,p
+			uL(k(i)+i+1:k(i+1)+i,n)=U(k(i)+1:k(i+1),n)+B(k(i)+1:k(i+1),k(i)+1:k(i+1))*U(k(i)+1:k(i+1),n).*(.5*(1-lambda1(k(i)+1:k(i+1))*delt./delx(k(i)+1:k(i+1))));
+			uR(k(i)+i:k(i+1)-1+i,n)=U(k(i)+1:k(i+1),n)-B(k(i)+1:k(i+1),k(i)+1:k(i+1))*U(k(i)+1:k(i+1),n).*(.5*(1+lambda2(k(i)+1:k(i+1))*delt./delx(k(i)+1:k(i+1))));
+		end
     end
     
     %FILL IN INCORRECT VALUES
