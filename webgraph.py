@@ -2,6 +2,7 @@ from collections import namedtuple
 from itertools import product
 
 from stencil_grid import StencilGrid
+from stencil_struct import StencilStruct
 
 import numpy
 
@@ -178,7 +179,11 @@ class Boundary(Junction):
         return (self.line_id, self.side)
 
     def set_values(self, values):
-        self.values[:] = values 
+        for i, value in enumerate(values):
+            if isinstance(value, StencilStruct):
+                self.values[i] = value.data
+            else:
+                self.values[i] = value
 
     def __repr__(self):
         return 'Boundary(%s, %s)' % ((self.line_id, self.side), self.size)

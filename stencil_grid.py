@@ -22,6 +22,9 @@ class StencilGrid(object):
         notation. If the data type of this stencil grid is a struct type, the
         returned item is a struct with the same fields.
         """
+        if isinstance(key, slice):
+            return [self[i] for i in range(*key.indices(len(self.data)))]
+
         # For struct types, wrap the data in a proxy object that allows the
         # dot (.) notation to access attributes instead of the [] notation
         # that numpy's dtype objects use.
@@ -30,7 +33,11 @@ class StencilGrid(object):
         return self.data[key]
 
     def __setitem__(self, key, value):
-        self.data[key] = value
+        if isinstance(key, slice):
+            for i, datum in zip(range(*key.indices(len(self.data))), value):
+                self[i] = datum
+        else:
+            self.data[key] = value
 
     def set_grid_variables(self):
         self.grid_variables = ["DIM"+str(x) for x in range(0,self.dim)]
