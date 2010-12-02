@@ -236,6 +236,8 @@ class StencilKernel(Kernel):
 			cur_node.body = body
 
 			ret_node = definitions
+
+			ret_node.append(cpp_ast.Pragma('omp parallel for'))
 			ret_node.append(loop_node)
 			return ret_node
 

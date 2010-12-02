@@ -33,6 +33,9 @@ class ASPModule(object):
             self.cuda_module = codepy.cuda.CudaModule(self.module)
             self.cuda_module.add_to_preamble([cpp_ast.Include('cuda.h', False)])
             self.nvcc_toolchain = codepy.toolchain.guess_nvcc_toolchain()
+        else:
+            # Enable OpenMP with the GCC toolchain.
+            self.toolchain.cflags.append('-fopenmp')
 
 
     def add_library(self, feature, include_dirs, library_dirs=[], libraries=[]):
