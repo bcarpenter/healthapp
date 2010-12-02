@@ -26,8 +26,8 @@ class StencilGrid(object):
         # dot (.) notation to access attributes instead of the [] notation
         # that numpy's dtype objects use.
         if self.dtype.type is numpy.void:
-            return StencilStruct(self.dtype, self.data.__getitem__(key))
-        return self.data.__getitem__(key)
+            return StencilStruct(self.dtype, self.data[key])
+        return self.data[key]
 
     def __setitem__(self, key, value):
         self.data[key] = value
@@ -69,7 +69,7 @@ class StencilGrid(object):
             # the ghost depth is symmetric on both sides.
             start = (self.shape[dimension] - self.interior[dimension]) / 2
             all_dims.append(range(start, self.shape[dimension] - start))
-        return (list(point) for point in product(*all_dims))
+        return (tuple(point) for point in product(*all_dims))
 
     def border_points(self):
         """
