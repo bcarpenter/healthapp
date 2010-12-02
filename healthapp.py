@@ -1,5 +1,6 @@
 from webgraph import WebGraph, Side, Line, Junction, Boundary
 from webkernel import LineKernel, JunctionKernel, BoundaryKernel, KernelPass
+from math import sqrt
 
 class InterfaceKernel(LineKernel):
 	"""A line stencil that runs over a line of nodes."""

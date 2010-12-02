@@ -198,5 +198,19 @@ class StencilStructConvertASTTests(unittest.TestCase):
         self.assertEqual(self.out_grid[3,3].out_b, 8.0)
         self.assertEqual(self.out_grid[3,3].out_c, 42.0)
 
+class InterfaceKernelTests(unittest.TestCase):
+        def setUp(self):
+                import numpy
+                from webgraph import Line
+                from healthapp import InterfaceKernel
+                
+                self.kernel = InterfaceKernel(1.0,2.0,3.0,4.0,5.0,6.0,7.0)
+                self.in_type = numpy.dtype([('A', float), ('u', float), ('p', float)])
+                self.out_type = numpy.dtype([('A', float), ('u', float), ('p', float)])
+                self.inline = Line([5], self.in_type)
+                self.outline = Line([5], self.out_type)
+        def test_line_kernel(self):
+                self.kernel.kernel(self.inline,self.outline)
+                
 if __name__ == '__main__':
 	unittest.main()
