@@ -39,7 +39,6 @@ class ASPModule(object):
         self.toolchain.add_library(feature, include_dirs, library_dirs, libraries)
 
     def add_header(self, include_file):
-        import asp.codegen.cpp_ast as cpp_ast
         self.module.add_to_preamble([cpp_ast.Include(include_file, False)])
 
     def add_to_preamble(self, pa):
@@ -65,23 +64,24 @@ class ASPModule(object):
         """
         return func.fdecl.subdecl.name
 
-
     def add_function_helper(self, func, fname=None, cuda_func=False):
-        if cuda_func:
-            module = self.cuda_module
-        else:
-            module = self.module
-        
-        if isinstance(func, str):
-            if fname == None:
-                raise Exception("Cannot add a function as a string without specifying the function's name")
+        if not isinstance(func, basestring):
+            fname = self.get_name_from_func(func)
+        if fname is None:
+            raise Exception(("cannot add a function as a string without "
+                             "specifying the function's name"))
+        # Only add a function once to a single module.
+        if fname in self.compiled_methods:
+            return
+
+        module = self.cuda_module if cuda_func else self.module
+        if isinstance(func, basestring):
             module.add_to_module([cpp_ast.Line(func)])
-            module.add_to_init([cpp_ast.Statement(
-                        "boost::python::def(\"%s\", &%s)" % (fname, fname))])
+            definition = 'boost::python::def("{0}", &{0})'.format(fname)
+            module.add_to_init([cpp_ast.Statement(definition)])
         else:
             module.add_function(func)
-            fname = self.get_name_from_func(func)
-        
+
         self.dirty = True
         self.compiled_methods.append(fname)
 
@@ -148,7 +148,5 @@ class ASPModule(object):
             if self.dirty:
                 self.compile()
             return self.func_with_variants(name)
-
-        else:
-            raise AttributeError("No method %s found; did you add it?" % name)
+        raise AttributeError("No method %s found; did you add it?" % name)
 

@@ -5,11 +5,12 @@ from stencil_struct import *
 import asp.codegen.python_ast as ast
 import asp.codegen.cpp_ast as cpp_ast
 import asp.codegen.ast_tools as ast_tools
+from asp.kernel import Kernel
 from asp.util import *
 
-# may want to make this inherit from something else...
-class StencilKernel(object):
-	def __init__(self):
+class StencilKernel(Kernel):
+
+	def __init__(self, asp_module_factory=None):
 		# we want to raise an exception if there is no kernel()
 		# method defined.
 		try:
@@ -27,17 +28,24 @@ class StencilKernel(object):
 
 		# replace kernel with shadow version
 		self.kernel = self.shadow_kernel
-		
+		if asp_module_factory is None:
+			from asp.jit import asp_module
+			self.asp_module_factory = asp_module.ASPModule
+		else:
+			self.asp_module_factory = asp_module_factory
 
 	def remove_indentation(self, src):
 		return src.lstrip()
 
 	def add_libraries(self, mod):
-		# these are necessary includes, includedirs, and init statements to use the numpy library
-		mod.add_library("numpy",[numpy.get_include()+"/numpy"])
-		mod.add_header("arrayobject.h")
-		mod.add_to_init([cpp_ast.Statement("import_array();")])
-		
+		"""Adds the necessary gcc includes, headers, and initialization calls
+		to use the numpy C API.
+		"""
+		if not StencilKernel.is_initialized(mod):
+			mod.add_library('numpy', [numpy.get_include() + '/numpy'])
+			mod.add_header('arrayobject.h')
+			mod.add_to_init([cpp_ast.Statement('import_array()')])
+			StencilKernel.mark_initialized(mod)
 
 	def shadow_kernel(self, *args):
 		if self.pure_python:
@@ -52,16 +60,12 @@ class StencilKernel(object):
 		debug_print('Phase 2 AST:\n' + ast.dump(phase2))
 		phase3 = StencilKernel.StencilConvertAST(argdict).visit(phase2)
 
-		from asp.jit import asp_module
-
-		mod = asp_module.ASPModule()
+		mod = self.asp_module_factory()
 		self.add_libraries(mod)
 		mod.add_function(phase3)
-#		mod.compile()
-#		mod.compiled_module.kernel(argdict['in_grid'].data, argdict['out_grid'].data)
-		myargs = [y.data for y in args]
-#		mod.kernel(argdict['in_grid'].data, argdict['out_grid'].data)
-		mod.kernel(*myargs)
+
+		grid_data = [grid.data for grid in args]
+		mod.kernel(*grid_data)
 
 	# the actual Stencil AST Node
 	class StencilInteriorIter(ast.AST):
