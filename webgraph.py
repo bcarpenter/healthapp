@@ -13,6 +13,7 @@ class WebGraph(object):
         for line in self.lines:
             if not isinstance(line, Line):
                 raise TypeError('graph lines must be of type Line')
+        self.dtype = lines[0].dtype
 
         # Junctions are where multiple lines meet (e.g., bifurcations). They
         # specify which lines meet and which sides of those lines are in the
@@ -39,7 +40,7 @@ class WebGraph(object):
         line_ids = WebGraph.indices(self.lines)
         all_line_sides = set(product(line_ids, (Side.LEFT, Side.RIGHT)))
         boundary_line_sides = all_line_sides - line_sides
-        self.boundaries = [Boundary(line_side, boundary_size)
+        self.boundaries = [Boundary(line_side, boundary_size, self.dtype)
                            for line_side in boundary_line_sides]
 
         # Fill in the junctions and boundaries with the values in the lines.
