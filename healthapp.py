@@ -4,42 +4,54 @@ import numpy
 from math import sqrt
 
 class InterfaceKernel(LineKernel):
-	"""A line stencil that runs over a line of nodes."""
-	def __init__(self, delt, delx, Ainitstar, betastar, rho, c, cstar):
-		self.delt = delt
-		self.delx = delx
-		self.Ainitstar = Ainitstar
-		self.betastar = betastar
-		self.rho = rho
-		self.c = c
-		self.cstar = cstar
+    """A line stencil that runs over a line of nodes."""
+    def __init__(self, delt, delx, Ainitstar, betastar, rho, c, cstar):
+        self.delt = delt
+        self.delx = delx
+        self.Ainitstar = Ainitstar
+        self.betastar = betastar
+        self.rho = rho
+        self.c = c
+        self.cstar = cstar
 
-	def kernel(self, inline, outline):
-		# lambda1=U(:,2)+c;
-		# lambda2=U(:,2)-c;
-	    for x in outline.interior_points():
-			for y in inline.neighbors(x,1):
-				# Strategy: calculate all uL,uR values, and use them to calculate the uI output values
+    def kernel(self, inline, outline):
+        # lambda1=U(:,2)+c;
+        # lambda2=U(:,2)-c;
+        for x in outline.interior_points():
+            for y in inline.neighbors(x,1):
+                # Strategy: calculate all uL,uR values, and use them to calculate the uI output values
 
-				# uL(2,n) = U(1,n) + B(1,1)*U(1,n).*(.5*(1-(U(1,2)+c)*delt./delx(1)))
-				print inline[y]
-				uL_A = inline[y].A + inline[y].A*(0.5*(1-inline[y].A+self.c)*self.delt/self.delx)
-				uL_u = inline[y].u + inline[y].u*(0.5*(1-inline[y].u+self.c)*self.delt/self.delx)
-				uL_p = inline[y].p + inline[y].p*(0.5*(1-inline[y].p+self.c)*self.delt/self.delx)
+                # uL(2,n) = U(1,n) + B(1,1)*U(1,n).*(.5*(1-(U(1,2)+c)*delt./delx(1)))
+                # Shift the point over by 1 since the output interface line has
+                # a ghost depth of 2.
+                y = tuple(i - 1 for i in y)
+                uL_A = inline[y].A + inline[y].A*(0.5*(1-inline[y].A+self.c)*self.delt/self.delx)
+                uL_u = inline[y].u + inline[y].u*(0.5*(1-inline[y].u+self.c)*self.delt/self.delx)
+                uL_p = inline[y].p + inline[y].p*(0.5*(1-inline[y].p+self.c)*self.delt/self.delx)
 
-				# uR(1,n) = U(1,n) - B(1,1)*U(1,n).*(.5*(1+(U(1,2)-c)*delt./delx(1)))
-				uR_A = inline[y].A + inline[y].A*(0.5*(1+inline[y].A-self.c)*self.delt/self.delx)
-				uR_u = inline[y].u + inline[y].u*(0.5*(1+inline[y].u-self.c)*self.delt/self.delx)
-				uR_p = inline[y].p + inline[y].p*(0.5*(1+inline[y].p-self.c)*self.delt/self.delx)
+                # uR(1,n) = U(1,n) - B(1,1)*U(1,n).*(.5*(1+(U(1,2)-c)*delt./delx(1)))
+                uR_A = inline[y].A + inline[y].A*(0.5*(1+inline[y].A-self.c)*self.delt/self.delx)
+                uR_u = inline[y].u + inline[y].u*(0.5*(1+inline[y].u-self.c)*self.delt/self.delx)
+                uR_p = inline[y].p + inline[y].p*(0.5*(1+inline[y].p-self.c)*self.delt/self.delx)
 
-				# uI(:,1)=(uI(:,3).*Ainitstar./betastar+Ainitstar.^.5).^2;
-				outline[x].A = pow(outline[x].p*self.Ainitstar/self.betastar+sqrt(self.Ainitstar),2)
+                # uI(:,1)=(uI(:,3).*Ainitstar./betastar+Ainitstar.^.5).^2;
+                outline[x].A = pow(outline[x].p*self.Ainitstar/self.betastar+sqrt(self.Ainitstar),2)
 
-				# uI(:,2)=(1./(2*rho*cstar)).*(uL(:,3)-uR(:,3))+0.5*(uL(:,2)+uR(:,2));
-				outline[x].u = (1/(2*self.rho*self.cstar))*(uL_p-uR_p)+0.5*(uL_u+uR_p)
+                # uI(:,2)=(1./(2*rho*cstar)).*(uL(:,3)-uR(:,3))+0.5*(uL(:,2)+uR(:,2));
+                outline[x].u = (1/(2*self.rho*self.cstar))*(uL_p-uR_p)+0.5*(uL_u+uR_p)
 
-				# uI(:,3)=.5*(uL(:,3)+uR(:,3))+.5*rho*cstar.*(uL(:,2)-uR(:,2));
-				outline[x].p = 0.5*(uL_p+uR_p)+0.5*self.rho*self.cstar*(uL_u-uR_u)
+                # uI(:,3)=.5*(uL(:,3)+uR(:,3))+.5*rho*cstar.*(uL(:,2)-uR(:,2));
+                outline[x].p = 0.5*(uL_p+uR_p)+0.5*self.rho*self.cstar*(uL_u-uR_u)
+
+class InterfaceLine(Line):
+
+    def __init__(self, size, dtype=float):
+        Line.__init__(self, size, dtype)
+        self.ghost_depth = 2
+        self.set_grid_variables()
+        self.set_interior()
+        self.set_default_neighbor_definition()
+        print tuple(self.interior_points())
 
 def create_interface_graph(node_graph, junction_size, boundary_size):
     """Creates a graph whose nodes store the interface values of the original
@@ -52,7 +64,7 @@ def create_interface_graph(node_graph, junction_size, boundary_size):
     for line_id in WebGraph.indices(node_graph.lines):
         node_line = node_graph.get_line(line_id)
         # Add 2 to each line length since we are adding a vertex on each end.
-        lines.append(Line(node_line.shape[0] + 2, node_line.dtype))
+        lines.append(InterfaceLine(node_line.shape[0] + 2, node_line.dtype))
 
     junctions = []
     for junction in node_graph.junctions:

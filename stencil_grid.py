@@ -36,6 +36,8 @@ class StencilGrid(object):
         if isinstance(key, slice):
             for i, datum in zip(range(*key.indices(len(self.data))), value):
                 self[i] = datum
+        elif isinstance(value, StencilStruct):
+            self.data[key] = value.data
         else:
             self.data[key] = value
 
