@@ -5,8 +5,8 @@ from stencil_kernel import StencilKernel
 from webgraph import WebGraph
 
 class LineKernel(StencilKernel):
-	"""A line stencil that runs over a line of nodes."""
-        pass
+    """A line stencil that runs over a line of nodes."""
+    pass
 
 class JunctionKernel(object):
 
@@ -37,8 +37,8 @@ class KernelPass(object):
         self.boundary_kernel = boundary_kernel
 
         # Create a kernel executor that can help run the kernels in parallel.
-        self.executor = ParallelExecutor(line_kernel, junction_kernel,
-                                         boundary_kernel)
+        self.executor = ParallelExecutor()#line_kernel, junction_kernel,
+                                         #boundary_kernel)
 
     def compute(self, in_graph, out_graph):
         line_pairs = KernelPass.line_pairs(in_graph, out_graph)

@@ -14,6 +14,9 @@ class ParallelExecutor(object):
         self.template = Template(filename='templates/parallel_executor.mako')
 
     def execute(self):
+        if not self.asp_module.arguments:
+            return
+
         tasks, all_arguments = [], []
         for name in self.asp_module.arguments:
             counter = 0

@@ -13,6 +13,7 @@ class InterfaceKernel(LineKernel):
         self.rho = rho
         self.c = c
         self.cstar = cstar
+        LineKernel.__init__(self)
 
     def kernel(self, inline, outline):
         # lambda1=U(:,2)+c;
@@ -51,7 +52,6 @@ class InterfaceLine(Line):
         self.set_grid_variables()
         self.set_interior()
         self.set_default_neighbor_definition()
-        print tuple(self.interior_points())
 
 def create_interface_graph(node_graph, junction_size, boundary_size):
     """Creates a graph whose nodes store the interface values of the original
