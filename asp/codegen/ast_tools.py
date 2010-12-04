@@ -28,6 +28,9 @@ class ASTNodeReplacer(ast.NodeTransformer):
 
 # class to convert from python AST to C++ AST
 class ConvertAST(ast.NodeTransformer):
+    def visit_Call(self, node):
+        return Call(self.visit(node.func),map(self.visit,node.args))
+
     def visit_Num(self, node):
         return CNumber(node.n)
 
