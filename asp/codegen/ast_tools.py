@@ -80,6 +80,13 @@ class ConvertAST(ast.NodeTransformer):
         return self.visit(node.body[0])
 
     def visit_Expr(self, node):
+        print "VISITEXPR:",node.value.func.id
+        # small (but bad) hack to declare variables
+        if type(node.value) == type(ast.Call()) and node.value.func.id == "_asp_declare":
+            vartype = node.value.args[0].s
+            varname = node.value.args[1].s
+            return Value(vartype, varname)
+
         return Expression(self.visit(node.value))
 
     # only single targets supported
