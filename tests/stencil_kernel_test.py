@@ -204,7 +204,7 @@ class InterfaceKernelTests(unittest.TestCase):
                 from webgraph import Line
                 from healthapp import InterfaceKernel
                 
-                self.kernel = InterfaceKernel(1.0,2.0,3.0,4.0,5.0,6.0,7.0)
+                self.kernel = InterfaceKernel()
                 self.in_type = numpy.dtype([('A', float), ('u', float), ('p', float)])
                 self.out_type = numpy.dtype([('A', float), ('u', float), ('p', float)])
                 self.inline = Line([5], self.in_type)
