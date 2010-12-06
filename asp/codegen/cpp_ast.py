@@ -1,4 +1,4 @@
-import numpy
+1;2600;0cimport numpy
 from codepy.cgen import *
 
 # these are additional classes that, along with codepy's classes, let
