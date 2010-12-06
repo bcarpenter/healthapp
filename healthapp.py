@@ -3,6 +3,18 @@ from webkernel import LineKernel, JunctionKernel, BoundaryKernel, KernelPass
 import numpy
 from math import sqrt,pow
 
+class InterfaceJunctionKernel(JunctionKernel):
+    def __init__(self):
+        JunctionKernel.__init__(self)
+    def kernel(self, in_junction, out_junction):
+        self.junction_values(in_junction, out_junction)
+
+class InterfaceBoundaryKernel(BoundaryKernel):
+    def __init__(self):
+        BoundaryKernel.__init__(self)
+    def kernel(self, in_junction, out_junction):
+        self.boundary_values(in_junction, out_junction)
+
 class InterfaceKernel(LineKernel):
     """A line stencil that runs over a line of nodes."""
     def __init__(self):
@@ -114,7 +126,7 @@ if __name__ == '__main__':
                 for y in in_grid.neighbors(x, 1):
                     out_grid[x] = out_grid[x] + in_grid[y]
 
-    compute_interfaces = KernelPass(InterfaceKernel(), None, None)
+    compute_interfaces = KernelPass(InterfaceKernel(),  InterfaceJunctionKernel(), InterfaceBoundaryKernel())
     compute_nodes = KernelPass(None, None, None)
     compute_interfaces.compute(node_graph, interface_graph)
 

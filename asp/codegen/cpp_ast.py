@@ -68,6 +68,27 @@ class Attribute(Expression):
     def __str__(self):
         return '%s.%s' % (self.value, self.attr)
 
+class Sqrt(Expression):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return 'sqrt(%s)' % self.value
+
+class Pow(Expression):
+    def __init__(self, value, pow):
+        self.value = value
+        self.pow = pow
+    def __str__(self):
+        return 'pow(%s, %s)' % self.value, self.pow
+
+
+class Return(Expression):
+    def __init__(self, value):
+        self.value = value
+    def __str__(self):
+        return "return %s" % self.value
+
+
 # expression types not used in this example:
 
 class PostfixUnaryOp(Expression):

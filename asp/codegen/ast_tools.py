@@ -64,17 +64,26 @@ class ConvertAST(ast.NodeTransformer):
     def visit_Not(self, node):
         return "!"
 
+    def visit_Sqrt(self, node):
+        return Sqrt(node.value)
+    def visit_Pow(self, node):
+        return Pow(node.value, node.pow)   
+
+
     def visit_Subscript(self, node):
         return Subscript(self.visit(node.value),
                 self.visit(node.slice))
 
     def visit_Index(self, node):
         return self.visit(node.value)
-
     
     def visit_Pass(self, node):
         return Expression()
-    
+
+    def visit_Return(self, node):
+        #print "RETURN", node.value, self.visit(self.visit(node.value))
+        return Return(self.visit(node.value))  
+
     # by default, only do first statement in a module
     def visit_Module(self, node):
         return self.visit(node.body[0])
@@ -97,11 +106,11 @@ class ConvertAST(ast.NodeTransformer):
     def visit_Attribute(self, node):
         return Attribute(node.attr, self.visit(node.value))
 
-    def visit_FunctionDef(self, node):
+    def visit_FunctionDef(self, node, return_type="void"):
         debug_print("In FunctionDef:")
         debug_print(ast.dump(node))
         debug_print("----")
-        return FunctionBody(FunctionDeclaration(Value("void",
+        return FunctionBody(FunctionDeclaration(Value(return_type,
                                                       node.name),
                                                 self.visit(node.args)),
                             Block([self.visit(x) for x in node.body]))
