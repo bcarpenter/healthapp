@@ -123,7 +123,9 @@ def cpp_type(dtype):
     """Returns the name and declarator for the C++ version of the specified
     type. If the given type is a C++ primitive, the declarator is None.
     """
-    if dtype.type is numpy.void:
+    try:
+        return dtype_to_ctype(dtype), None
+    except ValueError:
         fields = []
         for field in dtype.names:
             subtype, _ = dtype.fields[field]
@@ -133,19 +135,3 @@ def cpp_type(dtype):
             fields.append(Value(subname, field))
         struct_name = '_void_' + hex(abs(hash(dtype)))[2:]
         return 'struct ' + struct_name, Struct(struct_name, fields)
-
-    if dtype.type is numpy.float32:
-        name = 'float'
-    elif dtype.type is numpy.float64:
-        name = 'double'
-    elif dtype.type is numpy.int8:
-        name = 'char'
-    elif dtype.type is numpy.int16:
-        name = 'short'
-    elif dtype.type is numpy.int32:
-        name = 'int'
-    elif dtype.type is numpy.int64:
-        name = 'long'
-    else:
-        raise TypeError('unknown data type: %s' % (dtype,))
-    return name, None
