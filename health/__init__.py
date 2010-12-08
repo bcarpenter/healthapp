@@ -1,0 +1,3 @@
+from line import InterfaceLineKernel
+from junction import InterfaceJunctionKernel
+from boundary import InterfaceBoundaryKernel
