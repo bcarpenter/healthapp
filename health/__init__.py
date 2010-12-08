@@ -1,3 +1,4 @@
 from line import InterfaceLineKernel
 from junction import InterfaceJunctionKernel
 from boundary import InterfaceBoundaryKernel
+from interface import InterfaceLine, create_interface_graph
