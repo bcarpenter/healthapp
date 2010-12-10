@@ -134,15 +134,15 @@ class ASPModule(object):
         else:
             import time
             def special(*args, **kwargs):
-                start_time = time.time()
+                #start_time = time.time()
                 real_func = self.compiled_module.__getattribute__(variants.variant_names[variants.next_variant_run])
                 result = real_func(*args, **kwargs)
-                elapsed = time.time() - start_time
-                self.add_time(name, elapsed)
-                variants.variant_times.setdefault(variants.variant_names[variants.next_variant_run],[]).append(elapsed)
-                variants.next_variant_run += 1
-                if variants.next_variant_run >= len(variants.variant_names):
-                    variants.set_best()
+                #elapsed = time.time() - start_time
+                #self.add_time(name, elapsed)
+                #variants.variant_times.setdefault(variants.variant_names[variants.next_variant_run],[]).append(elapsed)
+                #variants.next_variant_run += 1
+                #if variants.next_variant_run >= len(variants.variant_names):
+                #    variants.set_best()
                 return result
             return special
 
