@@ -26,8 +26,10 @@ if __name__ == '__main__':
     compute_interfaces = KernelPass(InterfaceLineKernel(),
                                     InterfaceJunctionKernel(),
                                     InterfaceBoundaryKernel())
-    compute_nodes = KernelPass(InterfaceLineKernel, None, None)
+    compute_nodes = KernelPass(InterfaceLineKernel(), None, None)
+
     compute_interfaces.compute(node_graph, interface_graph)
+    compute_nodes.compute(interface_graph, node_graph)
 
     print 'Input lines:'
     for line in node_graph.lines:
