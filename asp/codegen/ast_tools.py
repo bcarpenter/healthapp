@@ -81,7 +81,6 @@ class ConvertAST(ast.NodeTransformer):
         return Expression()
 
     def visit_Return(self, node):
-        #print "RETURN", node.value, self.visit(self.visit(node.value))
         return Return(self.visit(node.value))  
 
     # by default, only do first statement in a module
@@ -89,7 +88,6 @@ class ConvertAST(ast.NodeTransformer):
         return self.visit(node.body[0])
 
     def visit_Expr(self, node):
-        print "VISITEXPR:",node.value.func.id
         # small (but bad) hack to declare variables
         if type(node.value) == type(ast.Call()) and node.value.func.id == "_asp_declare":
             vartype = node.value.args[0].s

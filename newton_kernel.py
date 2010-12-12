@@ -5,7 +5,8 @@ import asp.codegen.cpp_ast as cpp_ast
 import asp.codegen.ast_tools as ast_tools
 from asp.kernel import Kernel
 from asp.util import *
-from NewtonsMethod import *
+from newtons_method import *
+
 class NewtonKernel(Kernel):
 
     def __init__(self, asp_module_factory=None):
